@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - kafka-network
+      - internal-network
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+    depends_on:
+      - prometheus
+    networks:
+      - kafka-network
+      - internal-network
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter
+    ports:
+      - "9308:9308"
+    environment:
+      KAFKA_BROKERS: "kafka-bitnami-kraft:29092"
+      LOG_LEVEL: "debug"  # Включите логирование для диагностики
+    restart: unless-stopped  # Автоматический перезапуск при падении
+    networks:
+      - kafka-network
+      - internal-network
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:postgres@timescaledb:5432/sensor-db?sslmode=disable"
+    ports:
+      - "9187:9187"
+    networks:
+      - internal-network
+      - kafka-network
+
+volumes:
+  grafana-storage:
+
+networks:
+  kafka-network:
+    external: true
+
+  internal-network:
+    external: true
+    driver: bridge

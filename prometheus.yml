@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 5s  # Частота сбора метрик
+
+scrape_configs:
+  # Метрики Spring Boot (Actuator/Prometheus)
+  - job_name: 'spring-boot'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['demo-app:8089']  # Имя сервиса из вашего docker-compose
+
+  # Метрики Kafka через Kafka Exporter
+  - job_name: 'kafka'
+    static_configs:
+      - targets: ['kafka-exporter:9308']  # Сервис kafka-exporter
+    metrics_path: '/metrics'
+
+  # Метрики TimescaleDB через Postgres Exporter
+  - job_name: 'timescaledb'
+    static_configs:
+      - targets: ['postgres-exporter:9187']  # Сервис postgres-exporter
+    metrics_path: '/metrics'
